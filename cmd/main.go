@@ -24,7 +24,9 @@ func main() {
 
 	// 创建一个区块链
 	var bc = &blockchain.Blockchain{
-		Store: store,
+		Store:      store,
+		Difficulty: 5,
+		PrefixZero: "00000",
 	}
 
 	err = bc.LoadFromStore()

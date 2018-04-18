@@ -80,7 +80,7 @@ func (s *Server) handleWriteBlock(w http.ResponseWriter, r *http.Request, params
 	defer s.Blockchain.Unlock()
 
 	prevBlock := s.Blockchain.Blocks[len(s.Blockchain.Blocks)-1]
-	newBlock := generateBlock(prevBlock, data)
+	newBlock := s.Blockchain.generateBlock(prevBlock, data)
 
 	if validateBlock(newBlock, prevBlock) {
 		s.Blockchain.AddBlock(newBlock)

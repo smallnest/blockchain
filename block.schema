@@ -1,0 +1,9 @@
+struct Block  {
+	Height uint64 
+	Timestamp int64 
+	Hash string
+	PrevHash string
+	Difficulty int32
+	Nonce int64
+	Data []byte
+}

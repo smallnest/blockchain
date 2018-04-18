@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"strings"
 	"sync"
 	"time"
 )
@@ -11,13 +12,17 @@ import (
 // Block 代表区块链中的一块.
 type Block struct {
 	// 本区块在区块链中的高度
-	Height uint64 `json:"height"`
+	Height uint64 `json:"height,omitempty"`
 	// 本区块产生的时间戳
-	Timestamp int64 `json:"timestamp"`
+	Timestamp int64 `json:"timestamp,omitempty"`
 	// 数据Data的哈希值
-	Hash string `json:"hash"`
+	Hash string `json:"hash,omitempty"`
 	// 上一个区块中的Data的哈希值
-	PrevHash string `json:"prev_hash"`
+	PrevHash string `json:"prev_hash,omitempty"`
+	// 难度系数
+	Difficulty int32 `json:"difficulty"`
+	// 随机数
+	Nonce int64 `json:"nonce"`
 	// 本区块中的数据
 	Data []byte `json:"data,omitempty"`
 }
@@ -26,7 +31,9 @@ type Block struct {
 type Blockchain struct {
 	Blocks []*Block
 	sync.RWMutex
-	Store Store
+	Store      Store
+	Difficulty int32
+	PrefixZero string
 }
 
 // LoadFromStore 从文件中加载blockchain.
@@ -67,13 +74,29 @@ func (bc *Blockchain) AddBlock(block *Block) {
 }
 
 // generateBlock 为数据Data创建一个新的区块
-func generateBlock(prevBlock *Block, data []byte) *Block {
+func (bc *Blockchain) generateBlock(prevBlock *Block, data []byte) *Block {
 	var newBlock = &Block{}
 	newBlock.Height = prevBlock.Height + 1
 	newBlock.Timestamp = time.Now().Unix()
 	newBlock.PrevHash = prevBlock.Hash
 	newBlock.Data = data
 	newBlock.Hash = hash(newBlock)
+
+	newBlock.Difficulty = bc.Difficulty
+
+	for i := int64(0); ; i++ {
+		newBlock.Nonce = i
+		if !validateHash(hash(newBlock), bc.PrefixZero) {
+			continue
+		} else {
+			newBlock.Hash = hash(newBlock)
+			break
+		}
+	}
+
+	if newBlock.Height > 1 && newBlock.Height%3600 == 0 {
+		bc.adjustDifficulty()
+	}
 
 	return newBlock
 }
@@ -84,6 +107,7 @@ func hash(block *Block) string {
 	binary.Write(h, binary.BigEndian, block.Height)
 	binary.Write(h, binary.BigEndian, block.Timestamp)
 	binary.Write(h, binary.BigEndian, block.PrevHash)
+	binary.Write(h, binary.BigEndian, block.Nonce)
 	binary.Write(h, binary.BigEndian, block.Data)
 	hashed := h.Sum(nil)
 	return hex.EncodeToString(hashed)
@@ -104,4 +128,22 @@ func validateBlock(newBlock, prevBlock *Block) bool {
 	}
 
 	return true
+}
+
+func validateHash(hash string, prefixZero string) bool {
+	return strings.HasPrefix(hash, prefixZero)
+}
+
+func (bc *Blockchain) adjustDifficulty() {
+	last := len(bc.Blocks) - 1
+
+	tookMs := (bc.Blocks[last].Timestamp - bc.Blocks[last-3600].Timestamp) / 1e6
+	tookMs = tookMs / 3600
+	if tookMs > 2000 {
+		bc.Difficulty--
+		bc.PrefixZero = strings.Repeat("0", int(bc.Difficulty))
+	} else if tookMs < 500 {
+		bc.Difficulty++
+		bc.PrefixZero = strings.Repeat("0", int(bc.Difficulty))
+	}
 }
