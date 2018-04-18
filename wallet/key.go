@@ -20,20 +20,20 @@ var (
 	publicKeyPrefix  = "00"
 )
 
-// GenerateKeys 产生私钥、WIF地址、公钥、P2PKH地址
+// GenerateKeys 产生私钥、WIF地址、公钥、P2PKH地址.
 func GenerateKeys() (privateKey, wif string, publicKey, p2pkh string) {
 	priKey := generatePrivateKey()
 	privateKey = hex.EncodeToString(priKey)
 	privateKeyWif := base58check.Encode(privateKeyPrefix, priKey)
 
-	pubKey := generatePublicKey(priKey)
+	pubKey, ripeHashedBytes := generatePublicKey(priKey)
 	publicKey = hex.EncodeToString(pubKey)
-	publicKeyP2PKH := base58check.Encode(publicKeyPrefix, pubKey)
+	publicKeyP2PKH := base58check.Encode(publicKeyPrefix, ripeHashedBytes)
 
 	return privateKey, privateKeyWif, publicKey, publicKeyP2PKH
 }
 
-// GenerateBIP39 根据BIP-39规范生成助记词、私钥、WIF地址、公钥、P2PKH地址
+// GenerateBIP39 根据BIP-39规范生成助记词、私钥、WIF地址、公钥、P2PKH地址.
 func GenerateBIP39(secretPassphrase string) (mnemonic string, privateKey, wif string, publicKey, p2pkh string) {
 	entropy, _ := bip39.NewEntropy(256)
 	mnemonic, _ = bip39.NewMnemonic(entropy)
@@ -45,14 +45,14 @@ func GenerateBIP39(secretPassphrase string) (mnemonic string, privateKey, wif st
 	privateKey = hex.EncodeToString(priKey)
 	privateKeyWif := base58check.Encode(privateKeyPrefix, priKey)
 
-	pubKey := generatePublicKey(priKey)
+	pubKey, ripeHashedBytes := generatePublicKey(priKey)
 	publicKey = hex.EncodeToString(pubKey)
-	publicKeyP2PKH := base58check.Encode(publicKeyPrefix, pubKey)
+	publicKeyP2PKH := base58check.Encode(publicKeyPrefix, ripeHashedBytes)
 
 	return mnemonic, privateKey, privateKeyWif, publicKey, publicKeyP2PKH
 }
 
-// RecoverBIP39 根据助记词和密码恢复私钥、WIF地址、公钥、P2PKH地址
+// RecoverBIP39 根据助记词和密码恢复私钥、WIF地址、公钥、P2PKH地址.
 func RecoverBIP39(mnemonic, secretPassphrase string) (privateKey, wif string, publicKey, p2pkh string) {
 	seed := bip39.NewSeed(mnemonic, secretPassphrase)
 	masterKey, _ := bip32.NewMasterKey(seed)
@@ -61,14 +61,14 @@ func RecoverBIP39(mnemonic, secretPassphrase string) (privateKey, wif string, pu
 	privateKey = hex.EncodeToString(priKey)
 	privateKeyWif := base58check.Encode(privateKeyPrefix, priKey)
 
-	pubKey := generatePublicKey(priKey)
+	pubKey, ripeHashedBytes := generatePublicKey(priKey)
 	publicKey = hex.EncodeToString(pubKey)
-	publicKeyP2PKH := base58check.Encode(publicKeyPrefix, pubKey)
+	publicKeyP2PKH := base58check.Encode(publicKeyPrefix, ripeHashedBytes)
 
 	return privateKey, privateKeyWif, publicKey, publicKeyP2PKH
 }
 
-func generatePublicKey(privateKeyBytes []byte) []byte {
+func generatePublicKey(privateKeyBytes []byte) (publicKeyBytes, ripeHashedBytes []byte) {
 	var privateKeyBytes32 [32]byte
 	copy(privateKeyBytes32[:], privateKeyBytes)
 
@@ -88,9 +88,9 @@ func generatePublicKey(privateKeyBytes []byte) []byte {
 
 	ripeHash := ripemd160.New()
 	ripeHash.Write(shadPublicKeyBytes)
-	ripeHashedBytes := ripeHash.Sum(nil)
+	ripeHashedBytes = ripeHash.Sum(nil)
 
-	return ripeHashedBytes
+	return publicKeyBytes, ripeHashedBytes
 }
 
 func generatePrivateKey() []byte {

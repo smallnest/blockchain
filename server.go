@@ -7,19 +7,26 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/smallnest/blockchain/wallet"
+
 	"github.com/julienschmidt/httprouter"
 )
 
 // Server 提供区块链rpc服务，比如增加区块，查看区块等.
 type Server struct {
+	privateKey string
+	publicKey  string
 	Addr       string
 	server     *http.Server // rpc server
 	Blockchain *Blockchain
 }
 
 // NewServer 创建一个新的blockchain服务器.
-func NewServer(addr string, bc *Blockchain) *Server {
+func NewServer(privateKey string, addr string, bc *Blockchain) *Server {
+	publicKey, _ := wallet.GetPublicKey(privateKey)
 	return &Server{
+		privateKey: privateKey,
+		publicKey:  publicKey,
 		Addr:       addr,
 		Blockchain: bc,
 	}

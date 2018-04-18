@@ -9,12 +9,17 @@ import (
 )
 
 var (
-	addr     = flag.String("addr", ":8972", "listened address")
-	dataFile = flag.String("data", "./data", "data file")
+	privateKey = flag.String("privateKey", "", "private key")
+	addr       = flag.String("addr", ":8972", "listened address")
+	dataFile   = flag.String("data", "./data", "data file")
 )
 
 func main() {
 	flag.Parse()
+	if *privateKey == "" {
+		log.Info("请使用key命令行生成你自己的私钥，并且妥善保存。一旦丢失，无法找回!")
+		return
+	}
 
 	store, err := store.NewLevelDBStore(*dataFile)
 	if err != nil {
