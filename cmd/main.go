@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	"github.com/smallnest/blockchain"
+	"github.com/smallnest/blockchain/store"
 	"github.com/smallnest/log"
 )
 
@@ -15,7 +16,7 @@ var (
 func main() {
 	flag.Parse()
 
-	store, err := blockchain.NewLevelDBStore(*dataFile)
+	store, err := store.NewLevelDBStore(*dataFile)
 	if err != nil {
 		log.Fatalf("failed to create leveldb store: %v", err)
 	}
@@ -25,7 +26,15 @@ func main() {
 	var bc = &blockchain.Blockchain{
 		Store: store,
 	}
-	bc.GenerateGenesisBlock()
+
+	err = bc.LoadFromStore()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(bc.Blocks) == 0 {
+		bc.GenerateGenesisBlock()
+	}
 
 	// 创建 rpc server
 	var server = blockchain.NewServer(*addr, bc)

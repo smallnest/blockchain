@@ -11,15 +11,15 @@ import (
 // Block 代表区块链中的一块.
 type Block struct {
 	// 本区块在区块链中的高度
-	Height uint64
+	Height uint64 `json:"height"`
 	// 本区块产生的时间戳
-	Timestamp int64
+	Timestamp int64 `json:"timestamp"`
 	// 数据Data的哈希值
-	Hash string
+	Hash string `json:"hash"`
 	// 上一个区块中的Data的哈希值
-	PrevHash string
+	PrevHash string `json:"prev_hash"`
 	// 本区块中的数据
-	Data []byte
+	Data []byte `json:"data,omitempty"`
 }
 
 // Blockchain 是一条完整的区块链
@@ -31,9 +31,18 @@ type Blockchain struct {
 
 // LoadFromStore 从文件中加载blockchain.
 func (bc *Blockchain) LoadFromStore() error {
-	// TODO
-
-	return nil
+	var i uint64
+	for {
+		block, err := bc.Store.Get(i)
+		if err != nil {
+			if err == ErrNotFound {
+				return nil
+			}
+			return err
+		}
+		bc.AddBlock(block)
+		i++
+	}
 }
 
 // GenerateGenesisBlock 初始化创世块.
