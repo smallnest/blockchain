@@ -20,9 +20,9 @@ type Block struct {
 	// 上一个区块中的Data的哈希值
 	PrevHash string `json:"prev_hash,omitempty"`
 	// 难度系数
-	Difficulty int32 `json:"difficulty"`
+	Difficulty uint32 `json:"difficulty"`
 	// 随机数
-	Nonce int64 `json:"nonce"`
+	Nonce uint32 `json:"nonce"`
 	// 本区块中的数据
 	Data []byte `json:"data,omitempty"`
 }
@@ -32,7 +32,7 @@ type Blockchain struct {
 	Blocks []*Block
 	sync.RWMutex
 	Store      Store
-	Difficulty int32
+	Difficulty uint32
 	PrefixZero string
 }
 
@@ -84,7 +84,7 @@ func (bc *Blockchain) generateBlock(prevBlock *Block, data []byte) *Block {
 
 	newBlock.Difficulty = bc.Difficulty
 
-	for i := int64(0); ; i++ {
+	for i := uint32(0); ; i++ {
 		newBlock.Nonce = i
 		if !validateHash(hash(newBlock), bc.PrefixZero) {
 			continue

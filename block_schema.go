@@ -1,18 +1,6 @@
 // gencode go -schema block.schema -package blockchain -out block_schema.go
 package blockchain
 
-import (
-	"io"
-	"time"
-	"unsafe"
-)
-
-var (
-	_ = unsafe.Sizeof(0)
-	_ = io.ReadFull
-	_ = time.Now()
-)
-
 func (d *Block) Size() (s uint64) {
 
 	{
@@ -60,7 +48,7 @@ func (d *Block) Size() (s uint64) {
 		}
 		s += l
 	}
-	s += 28
+	s += 24
 	return
 }
 func (d *Block) Marshal(buf []byte) ([]byte, error) {
@@ -171,14 +159,6 @@ func (d *Block) Marshal(buf []byte) ([]byte, error) {
 
 		buf[i+3+20] = byte(d.Nonce >> 24)
 
-		buf[i+4+20] = byte(d.Nonce >> 32)
-
-		buf[i+5+20] = byte(d.Nonce >> 40)
-
-		buf[i+6+20] = byte(d.Nonce >> 48)
-
-		buf[i+7+20] = byte(d.Nonce >> 56)
-
 	}
 	{
 		l := uint64(len(d.Data))
@@ -188,18 +168,18 @@ func (d *Block) Marshal(buf []byte) ([]byte, error) {
 			t := uint64(l)
 
 			for t >= 0x80 {
-				buf[i+28] = byte(t) | 0x80
+				buf[i+24] = byte(t) | 0x80
 				t >>= 7
 				i++
 			}
-			buf[i+28] = byte(t)
+			buf[i+24] = byte(t)
 			i++
 
 		}
-		copy(buf[i+28:], d.Data)
+		copy(buf[i+24:], d.Data)
 		i += l
 	}
-	return buf[:i+28], nil
+	return buf[:i+24], nil
 }
 
 func (d *Block) Unmarshal(buf []byte) (uint64, error) {
@@ -257,12 +237,12 @@ func (d *Block) Unmarshal(buf []byte) (uint64, error) {
 	}
 	{
 
-		d.Difficulty = 0 | (int32(buf[i+0+16]) << 0) | (int32(buf[i+1+16]) << 8) | (int32(buf[i+2+16]) << 16) | (int32(buf[i+3+16]) << 24)
+		d.Difficulty = 0 | (uint32(buf[i+0+16]) << 0) | (uint32(buf[i+1+16]) << 8) | (uint32(buf[i+2+16]) << 16) | (uint32(buf[i+3+16]) << 24)
 
 	}
 	{
 
-		d.Nonce = 0 | (int64(buf[i+0+20]) << 0) | (int64(buf[i+1+20]) << 8) | (int64(buf[i+2+20]) << 16) | (int64(buf[i+3+20]) << 24) | (int64(buf[i+4+20]) << 32) | (int64(buf[i+5+20]) << 40) | (int64(buf[i+6+20]) << 48) | (int64(buf[i+7+20]) << 56)
+		d.Nonce = 0 | (uint32(buf[i+0+20]) << 0) | (uint32(buf[i+1+20]) << 8) | (uint32(buf[i+2+20]) << 16) | (uint32(buf[i+3+20]) << 24)
 
 	}
 	{
@@ -271,10 +251,10 @@ func (d *Block) Unmarshal(buf []byte) (uint64, error) {
 		{
 
 			bs := uint8(7)
-			t := uint64(buf[i+28] & 0x7F)
-			for buf[i+28]&0x80 == 0x80 {
+			t := uint64(buf[i+24] & 0x7F)
+			for buf[i+24]&0x80 == 0x80 {
 				i++
-				t |= uint64(buf[i+28]&0x7F) << bs
+				t |= uint64(buf[i+24]&0x7F) << bs
 				bs += 7
 			}
 			i++
@@ -287,8 +267,8 @@ func (d *Block) Unmarshal(buf []byte) (uint64, error) {
 		} else {
 			d.Data = make([]byte, l)
 		}
-		copy(d.Data, buf[i+28:])
+		copy(d.Data, buf[i+24:])
 		i += l
 	}
-	return i + 28, nil
+	return i + 24, nil
 }

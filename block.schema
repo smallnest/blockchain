@@ -3,7 +3,7 @@ struct Block  {
 	Timestamp int64 
 	Hash string
 	PrevHash string
-	Difficulty int32
-	Nonce int64
+	Difficulty uint32
+	Nonce uint32
 	Data []byte
 }
